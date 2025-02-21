@@ -9,6 +9,7 @@ import {
 } from "@mui/material";
 import { CloudUpload, InsertDriveFile, Close } from "@mui/icons-material";
 import axios from "axios";
+import { API_URL } from "../../config/index";
 
 function ProductImageUpload({
   imageFile,
@@ -51,7 +52,7 @@ function ProductImageUpload({
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/admin/products/upload-image",
+        `${API_URL}/api/admin/products/upload-image`,
         data
       );
 
