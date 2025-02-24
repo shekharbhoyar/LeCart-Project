@@ -1,79 +1,64 @@
 import { useSelector } from "react-redux";
-import { Badge, DialogContent, Typography, Divider } from "@mui/material";
+import { Badge } from "../ui/badge";
+import { DialogContent } from "../ui/dialog";
+import { Label } from "../ui/label";
+import { Separator } from "../ui/separator";
 
 function ShoppingOrderDetailsView({ orderDetails }) {
   const { user } = useSelector((state) => state.auth);
 
   return (
-    <DialogContent>
+    <DialogContent className="sm:max-w-[600px]">
       <div className="grid gap-6">
         <div className="grid gap-2">
           <div className="flex mt-6 items-center justify-between">
-            <Typography variant="body1" fontWeight="medium">
-              Order ID
-            </Typography>
-            <Typography>{orderDetails?._id}</Typography>
+            <p className="font-medium">Order ID</p>
+            <Label>{orderDetails?._id}</Label>
           </div>
           <div className="flex mt-2 items-center justify-between">
-            <Typography variant="body1" fontWeight="medium">
-              Order Date
-            </Typography>
-            <Typography>{orderDetails?.orderDate.split("T")[0]}</Typography>
+            <p className="font-medium">Order Date</p>
+            <Label>{orderDetails?.orderDate.split("T")[0]}</Label>
           </div>
           <div className="flex mt-2 items-center justify-between">
-            <Typography variant="body1" fontWeight="medium">
-              Order Price
-            </Typography>
-            <Typography>${orderDetails?.totalAmount}</Typography>
+            <p className="font-medium">Order Price</p>
+            <Label>${orderDetails?.totalAmount}</Label>
           </div>
           <div className="flex mt-2 items-center justify-between">
-            <Typography variant="body1" fontWeight="medium">
-              Payment method
-            </Typography>
-            <Typography>{orderDetails?.paymentMethod}</Typography>
+            <p className="font-medium">Payment method</p>
+            <Label>{orderDetails?.paymentMethod}</Label>
           </div>
           <div className="flex mt-2 items-center justify-between">
-            <Typography variant="body1" fontWeight="medium">
-              Payment Status
-            </Typography>
-            <Typography>{orderDetails?.paymentStatus}</Typography>
+            <p className="font-medium">Payment Status</p>
+            <Label>{orderDetails?.paymentStatus}</Label>
           </div>
           <div className="flex mt-2 items-center justify-between">
-            <Typography variant="body1" fontWeight="medium">
-              Order Status
-            </Typography>
-            <Badge
-              sx={{
-                padding: "4px 12px",
-                backgroundColor:
+            <p className="font-medium">Order Status</p>
+            <Label>
+              <Badge
+                className={`py-1 px-3 ${
                   orderDetails?.orderStatus === "confirmed"
-                    ? "green"
+                    ? "bg-green-500"
                     : orderDetails?.orderStatus === "rejected"
-                    ? "red"
-                    : "black",
-                color: "white",
-              }}
-            >
-              {orderDetails?.orderStatus}
-            </Badge>
+                    ? "bg-red-600"
+                    : "bg-black"
+                }`}
+              >
+                {orderDetails?.orderStatus}
+              </Badge>
+            </Label>
           </div>
         </div>
-        <Divider />
+        <Separator />
         <div className="grid gap-4">
           <div className="grid gap-2">
-            <Typography variant="body1" fontWeight="medium">
-              Order Details
-            </Typography>
+            <div className="font-medium">Order Details</div>
             <ul className="grid gap-3">
               {orderDetails?.cartItems && orderDetails?.cartItems.length > 0
                 ? orderDetails?.cartItems.map((item) => (
-                    <li
-                      className="flex items-center justify-between"
-                      key={item.title}
-                    >
-                      <Typography>Title: {item.title}</Typography>
-                      <Typography>Quantity: {item.quantity}</Typography>
-                      <Typography>Price: ${item.price}</Typography>
+                    <li className="flex items-center justify-between">
+                      <span>Title: {item.title}</span>
+                      <span>Quantity: {item.quantity}</span>
+                      <span>Price: ${item.price}</span>
                     </li>
                   ))
                 : null}
@@ -82,16 +67,14 @@ function ShoppingOrderDetailsView({ orderDetails }) {
         </div>
         <div className="grid gap-4">
           <div className="grid gap-2">
-            <Typography variant="body1" fontWeight="medium">
-              Shipping Info
-            </Typography>
+            <div className="font-medium">Shipping Info</div>
             <div className="grid gap-0.5 text-muted-foreground">
-              <Typography>{user.userName}</Typography>
-              <Typography>{orderDetails?.addressInfo?.address}</Typography>
-              <Typography>{orderDetails?.addressInfo?.city}</Typography>
-              <Typography>{orderDetails?.addressInfo?.pincode}</Typography>
-              <Typography>{orderDetails?.addressInfo?.phone}</Typography>
-              <Typography>{orderDetails?.addressInfo?.notes}</Typography>
+              <span>{user.userName}</span>
+              <span>{orderDetails?.addressInfo?.address}</span>
+              <span>{orderDetails?.addressInfo?.city}</span>
+              <span>{orderDetails?.addressInfo?.pincode}</span>
+              <span>{orderDetails?.addressInfo?.phone}</span>
+              <span>{orderDetails?.addressInfo?.notes}</span>
             </div>
           </div>
         </div>

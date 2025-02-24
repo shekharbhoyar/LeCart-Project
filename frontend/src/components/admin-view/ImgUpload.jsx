@@ -9,7 +9,7 @@ import {
 } from "@mui/material";
 import { CloudUpload, InsertDriveFile, Close } from "@mui/icons-material";
 import axios from "axios";
-import { API_URL } from "../../config.js";
+import { API_URL } from "../../mainConfig.js";
 
 console.log(" :", API_URL);
 

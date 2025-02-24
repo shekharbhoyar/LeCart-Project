@@ -1,55 +1,42 @@
 import { filterOptions } from "../../config/index";
 import { Fragment } from "react";
-import {
-  FormControlLabel,
-  Checkbox,
-  Divider,
-  Typography,
-  Paper,
-} from "@mui/material";
+import { Label } from "../ui/label";
+import { Checkbox } from "../ui/checkbox";
+import { Separator } from "../ui/separator";
 
 function ProductFilter({ filters, handleFilter }) {
   return (
-    <Paper elevation={2}>
-      <div style={{ padding: "16px", borderBottom: "1px solid #ddd" }}>
-        <Typography variant="h6" fontWeight="bold">
-          Filters
-        </Typography>
+    <div className="bg-background rounded-lg shadow-sm">
+      <div className="p-4 border-b">
+        <h2 className="text-lg font-extrabold">Filters</h2>
       </div>
-      <div style={{ padding: "16px" }}>
-        {Object.keys(filterOptions).map((keyItem, index) => (
-          <Fragment key={keyItem}>
+      <div className="p-4 space-y-4">
+        {Object.keys(filterOptions).map((keyItem) => (
+          <Fragment>
             <div>
-              <Typography variant="subtitle1" fontWeight="bold">
-                {keyItem}
-              </Typography>
-              <div style={{ marginTop: "8px" }}>
+              <h3 className="text-base font-bold">{keyItem}</h3>
+              <div className="grid gap-2 mt-2">
                 {filterOptions[keyItem].map((option) => (
-                  <FormControlLabel
-                    key={option.id}
-                    control={
-                      <Checkbox
-                        checked={
-                          filters &&
-                          Object.keys(filters).length > 0 &&
-                          filters[keyItem] &&
-                          filters[keyItem].indexOf(option.id) > -1
-                        }
-                        onChange={() => handleFilter(keyItem, option.id)}
-                      />
-                    }
-                    label={option.label}
-                  />
+                  <Label className="flex font-medium items-center gap-2 ">
+                    <Checkbox
+                      checked={
+                        filters &&
+                        Object.keys(filters).length > 0 &&
+                        filters[keyItem] &&
+                        filters[keyItem].indexOf(option.id) > -1
+                      }
+                      onCheckedChange={() => handleFilter(keyItem, option.id)}
+                    />
+                    {option.label}
+                  </Label>
                 ))}
               </div>
             </div>
-            {index !== Object.keys(filterOptions).length - 1 && (
-              <Divider style={{ margin: "16px 0" }} />
-            )}
+            <Separator />
           </Fragment>
         ))}
       </div>
-    </Paper>
+    </div>
   );
 }
 

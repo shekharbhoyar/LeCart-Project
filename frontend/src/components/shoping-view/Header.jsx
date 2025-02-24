@@ -5,20 +5,24 @@ import {
   useNavigate,
   useSearchParams,
 } from "react-router-dom";
-import Drawer from "@mui/material/Drawer";
-import Button from "@mui/material/Button";
-import MenuItem from "@mui/material/MenuItem";
-import Avatar from "@mui/material/Avatar";
-import MenuMUI from "@mui/material/Menu";
-import MenuIcon from "@mui/icons-material/Menu";
-import Divider from "@mui/material/Divider";
-import Typography from "@mui/material/Typography";
+import { Sheet, SheetContent, SheetTrigger } from "../../components/ui/sheet";
+import { Button } from "../../components/ui/button";
 import { useDispatch, useSelector } from "react-redux";
 import { shoppingViewHeaderMenuItems } from "../../config/index";
-import { logoutUser } from "../../store/auth-slice/index";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "../ui/avatar";
+import { logoutUser } from "@/store/auth-slice";
 import UserCartWrapper from "./Cartwrapper";
 import { useEffect, useState } from "react";
 import { fetchCartItems } from "../../store/shop/cartSlice/index";
+import { Label } from "../ui/label";
 
 function MenuItems() {
   const navigate = useNavigate();
@@ -48,13 +52,13 @@ function MenuItems() {
   return (
     <nav className="flex flex-col mb-3 lg:mb-0 lg:items-center gap-6 lg:flex-row">
       {shoppingViewHeaderMenuItems.map((menuItem) => (
-        <Typography
+        <Label
           onClick={() => handleNavigate(menuItem)}
-          className="text-sm font-medium cursor-pointer"
+          className="text-2xl font-medium cursor-pointer "
           key={menuItem.id}
         >
           {menuItem.label}
-        </Typography>
+        </Label>
       ))}
     </nav>
   );
@@ -63,8 +67,7 @@ function MenuItems() {
 function HeaderRightContent() {
   const { user } = useSelector((state) => state.auth);
   const { cartItems } = useSelector((state) => state.shopCart);
-  const [openCartDrawer, setOpenCartDrawer] = useState(false);
-  const [anchorEl, setAnchorEl] = useState(null);
+  const [openCartSheet, setOpenCartSheet] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -76,61 +79,85 @@ function HeaderRightContent() {
     dispatch(fetchCartItems(user?.id));
   }, [dispatch]);
 
+  console.log(cartItems, "Chandrashekhar");
+
   return (
     <div className="flex lg:items-center lg:flex-row flex-col gap-4">
-      <Button onClick={() => setOpenCartDrawer(true)}>
-        <ShoppingCart className="w-6 h-6" />
-        <span className="ml-2">{cartItems?.items?.length || 0}</span>
-      </Button>
-      <Drawer
-        anchor="right"
-        open={openCartDrawer}
-        onClose={() => setOpenCartDrawer(false)}
-      >
+      <Sheet open={openCartSheet} onOpenChange={() => setOpenCartSheet(false)}>
+        <Button
+          onClick={() => setOpenCartSheet(true)}
+          variant="outline"
+          size="icon"
+          className="relative"
+        >
+          <ShoppingCart className="w-6 h-6" />
+          <span className="absolute top-[-5px] right-[2px] font-bold text-sm">
+            {cartItems?.items?.length || 0}
+          </span>
+          <span className="sr-only">User cart</span>
+        </Button>
         <UserCartWrapper
-          setOpenCartDrawer={setOpenCartDrawer}
-          cartItems={cartItems?.items?.length ? cartItems.items : []}
+          setOpenCartSheet={setOpenCartSheet}
+          cartItems={
+            cartItems && cartItems.items && cartItems.items.length > 0
+              ? cartItems.items
+              : []
+          }
         />
-      </Drawer>
-      <Avatar
-        onClick={(e) => setAnchorEl(e.currentTarget)}
-        className="cursor-pointer"
-      >
-        {user?.userName[0].toUpperCase()}
-      </Avatar>
-      <MenuMUI
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={() => setAnchorEl(null)}
-      >
-        <MenuItem disabled>Logged in as {user?.userName}</MenuItem>
-        <Divider />
-        <MenuItem onClick={() => navigate("/shop/account")}>
-          <UserCog className="mr-2 h-4 w-4" /> Account
-        </MenuItem>
-        <Divider />
-        <MenuItem onClick={handleLogout}>
-          <LogOut className="mr-2 h-4 w-4" /> Logout
-        </MenuItem>
-      </MenuMUI>
+      </Sheet>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Avatar className="bg-black">
+            <AvatarFallback className="bg-black text-white font-extrabold">
+              {user?.userName[0].toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="right" className="w-56">
+          <DropdownMenuLabel>Logged in as {user?.userName}</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => navigate("/shop/account")}>
+            <UserCog className="mr-2 h-4 w-4" />
+            Account
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={handleLogout}>
+            <LogOut className="mr-2 h-4 w-4" />
+            Logout
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }
 
 function ShoppingHeader() {
+  const { isAuthenticated } = useSelector((state) => state.auth);
+
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background">
       <div className="flex h-16 items-center justify-between px-4 md:px-6">
         <Link to="/shop/home" className="flex items-center gap-2">
           <HousePlug className="h-6 w-6" />
-          <span className="font-bold">LeCart</span>
+          <span className="font-bold text-3xl">LeCart</span>
         </Link>
-        <Button className="lg:hidden ">
-          <MenuIcon />
-        </Button>
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="icon" className="lg:hidden">
+              <Menu className="h-6 w-6" />
+              <span className="sr-only ">Toggle header menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-full max-w-xs text-2xl">
+            <MenuItems />
+            <HeaderRightContent />
+          </SheetContent>
+        </Sheet>
         <div className="hidden lg:block">
           <MenuItems />
         </div>
+
         <div className="hidden lg:block">
           <HeaderRightContent />
         </div>

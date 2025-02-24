@@ -1,9 +1,7 @@
 import { useNavigate } from "react-router-dom";
-import { Button } from "@mui/material";
-import Drawer from "@mui/material/Drawer";
-import Typography from "@mui/material/Typography";
-import Box from "@mui/material/Box";
-import UserCartItemsContent from "./AddressCard";
+import { Button } from "../ui/button";
+import { SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
+import UserCartItemsContent from "./CartItemsContent";
 
 function UserCartWrapper({ cartItems, setOpenCartSheet }) {
   const navigate = useNavigate();
@@ -22,36 +20,31 @@ function UserCartWrapper({ cartItems, setOpenCartSheet }) {
       : 0;
 
   return (
-    <Drawer anchor="right" open={true} onClose={() => setOpenCartSheet(false)}>
-      <Box sx={{ width: 300, p: 2 }}>
-        <Typography variant="h6">Your Cart</Typography>
-        <Box sx={{ mt: 2 }}>
-          {cartItems && cartItems.length > 0
-            ? cartItems.map((item) => <UserCartItemsContent cartItem={item} />)
-            : null}
-        </Box>
-        <Box sx={{ mt: 2, display: "flex", justifyContent: "space-between" }}>
-          <Typography variant="body1" fontWeight="bold">
-            Total
-          </Typography>
-          <Typography variant="body1" fontWeight="bold">
-            ${totalCartAmount}
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          color="primary"
-          fullWidth
-          sx={{ mt: 2 }}
-          onClick={() => {
-            navigate("/shop/checkout");
-            setOpenCartSheet(false);
-          }}
-        >
-          Checkout
-        </Button>
-      </Box>
-    </Drawer>
+    <SheetContent className="sm:max-w-md">
+      <SheetHeader>
+        <SheetTitle>Your Cart</SheetTitle>
+      </SheetHeader>
+      <div className="mt-8 space-y-4">
+        {cartItems && cartItems.length > 0
+          ? cartItems.map((item) => <UserCartItemsContent cartItem={item} />)
+          : null}
+      </div>
+      <div className="mt-8 space-y-4">
+        <div className="flex justify-between">
+          <span className="font-bold">Total</span>
+          <span className="font-bold">${totalCartAmount}</span>
+        </div>
+      </div>
+      <Button
+        onClick={() => {
+          navigate("/shop/checkout");
+          setOpenCartSheet(false);
+        }}
+        className="w-full mt-6"
+      >
+        Checkout
+      </Button>
+    </SheetContent>
   );
 }
 

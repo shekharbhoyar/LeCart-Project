@@ -1,24 +1,21 @@
 import { Minus, Plus, Trash } from "lucide-react";
-import { Button, IconButton, Snackbar } from "@mui/material";
+import { Button } from "../ui/button";
 import { useDispatch, useSelector } from "react-redux";
-import { deleteCartItem, updateCartQuantity } from "@/store/shop/cart-slice";
-import { useState } from "react";
+import {
+  deleteCartItem,
+  updateCartQuantity,
+} from "../../store/shop/cartSlice/index";
+import { useToast } from "../ui/use-toast";
 
 function UserCartItemsContent({ cartItem }) {
   const { user } = useSelector((state) => state.auth);
   const { cartItems } = useSelector((state) => state.shopCart);
   const { productList } = useSelector((state) => state.shopProducts);
   const dispatch = useDispatch();
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
-
-  function showSnackbar(message) {
-    setSnackbarMessage(message);
-    setSnackbarOpen(true);
-  }
+  const { toast } = useToast();
 
   function handleUpdateQuantity(getCartItem, typeOfAction) {
-    if (typeOfAction === "plus") {
+    if (typeOfAction == "plus") {
       let getCartItems = cartItems.items || [];
 
       if (getCartItems.length) {
@@ -31,10 +28,16 @@ function UserCartItemsContent({ cartItem }) {
         );
         const getTotalStock = productList[getCurrentProductIndex].totalStock;
 
+        console.log(getCurrentProductIndex, getTotalStock, "getTotalStock");
+
         if (indexOfCurrentCartItem > -1) {
           const getQuantity = getCartItems[indexOfCurrentCartItem].quantity;
           if (getQuantity + 1 > getTotalStock) {
-            showSnackbar(`Only ${getQuantity} quantity can be added for this item`);
+            toast({
+              title: `Only ${getQuantity} quantity can be added for this item`,
+              variant: "destructive",
+            });
+
             return;
           }
         }
@@ -52,7 +55,9 @@ function UserCartItemsContent({ cartItem }) {
       })
     ).then((data) => {
       if (data?.payload?.success) {
-        showSnackbar("Cart item is updated successfully");
+        toast({
+          title: "Cart item is updated successfully",
+        });
       }
     });
   }
@@ -62,7 +67,9 @@ function UserCartItemsContent({ cartItem }) {
       deleteCartItem({ userId: user?.id, productId: getCartItem?.productId })
     ).then((data) => {
       if (data?.payload?.success) {
-        showSnackbar("Cart item is deleted successfully");
+        toast({
+          title: "Cart item is deleted successfully",
+        });
       }
     });
   }
@@ -77,20 +84,26 @@ function UserCartItemsContent({ cartItem }) {
       <div className="flex-1">
         <h3 className="font-extrabold">{cartItem?.title}</h3>
         <div className="flex items-center gap-2 mt-1">
-          <IconButton
-            color="primary"
+          <Button
+            variant="outline"
+            className="h-8 w-8 rounded-full"
+            size="icon"
             disabled={cartItem?.quantity === 1}
             onClick={() => handleUpdateQuantity(cartItem, "minus")}
           >
-            <Minus size={20} />
-          </IconButton>
+            <Minus className="w-4 h-4" />
+            <span className="sr-only">Decrease</span>
+          </Button>
           <span className="font-semibold">{cartItem?.quantity}</span>
-          <IconButton
-            color="primary"
+          <Button
+            variant="outline"
+            className="h-8 w-8 rounded-full"
+            size="icon"
             onClick={() => handleUpdateQuantity(cartItem, "plus")}
           >
-            <Plus size={20} />
-          </IconButton>
+            <Plus className="w-4 h-4" />
+            <span className="sr-only">Decrease</span>
+          </Button>
         </div>
       </div>
       <div className="flex flex-col items-end">
@@ -101,16 +114,12 @@ function UserCartItemsContent({ cartItem }) {
             cartItem?.quantity
           ).toFixed(2)}
         </p>
-        <IconButton color="secondary" onClick={() => handleCartItemDelete(cartItem)}>
-          <Trash size={20} />
-        </IconButton>
+        <Trash
+          onClick={() => handleCartItemDelete(cartItem)}
+          className="cursor-pointer mt-1"
+          size={20}
+        />
       </div>
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={3000}
-        onClose={() => setSnackbarOpen(false)}
-        message={snackbarMessage}
-      />
     </div>
   );
 }

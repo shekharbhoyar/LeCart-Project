@@ -1,4 +1,6 @@
-import { Button, Card, CardContent, CardActions, Typography } from "@mui/material";
+import { Button } from "../ui/button";
+import { Card, CardContent, CardFooter } from "../ui/card";
+import { Label } from "../ui/label";
 
 function AddressCard({
   addressInfo,
@@ -14,26 +16,23 @@ function AddressCard({
           ? () => setCurrentSelectedAddress(addressInfo)
           : null
       }
-      sx={{
-        cursor: "pointer",
-        border: selectedId?._id === addressInfo?._id ? "4px solid red" : "1px solid black",
-      }}
+      className={`cursor-pointer border-red-700 ${
+        selectedId?._id === addressInfo?._id
+          ? "border-red-900 border-[4px]"
+          : "border-black"
+      }`}
     >
-      <CardContent>
-        <Typography variant="body1">Address: {addressInfo?.address}</Typography>
-        <Typography variant="body1">City: {addressInfo?.city}</Typography>
-        <Typography variant="body1">Pincode: {addressInfo?.pincode}</Typography>
-        <Typography variant="body1">Phone: {addressInfo?.phone}</Typography>
-        <Typography variant="body1">Notes: {addressInfo?.notes}</Typography>
+      <CardContent className="grid p-4 gap-4">
+        <Label>Address: {addressInfo?.address}</Label>
+        <Label>City: {addressInfo?.city}</Label>
+        <Label>pincode: {addressInfo?.pincode}</Label>
+        <Label>Phone: {addressInfo?.phone}</Label>
+        <Label>Notes: {addressInfo?.notes}</Label>
       </CardContent>
-      <CardActions>
-        <Button variant="contained" color="primary" onClick={() => handleEditAddress(addressInfo)}>
-          Edit
-        </Button>
-        <Button variant="contained" color="secondary" onClick={() => handleDeleteAddress(addressInfo)}>
-          Delete
-        </Button>
-      </CardActions>
+      <CardFooter className="p-3 flex justify-between">
+        <Button onClick={() => handleEditAddress(addressInfo)}>Edit</Button>
+        <Button onClick={() => handleDeleteAddress(addressInfo)}>Delete</Button>
+      </CardFooter>
     </Card>
   );
 }
