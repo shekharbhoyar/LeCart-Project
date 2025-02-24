@@ -118,7 +118,10 @@ function ShoppingCheckout() {
             </div>
           </div>
           <div className="mt-4 w-full">
-            <Button onClick={handleInitiatePaypalPayment} className="w-full">
+            <Button
+              onClick={handleInitiatePaypalPayment}
+              className="w-full cursor-pointer"
+            >
               {isPaymentStart
                 ? "Processing Paypal Payment..."
                 : "Checkout with Paypal"}

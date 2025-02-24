@@ -1,4 +1,4 @@
-import { Card, CardHeader, CardContent, Typography } from "@mui/material";
+import { Card, CardHeader, CardTitle } from "../../components/ui/card";
 import { capturePayment } from "../../store/shop/orderSlice/index";
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
@@ -25,13 +25,10 @@ function PaypalReturnPage() {
   }, [paymentId, payerId, dispatch]);
 
   return (
-    <Card sx={{ p: 3 }}>
-      <CardHeader title="Processing Payment..." />
-      <CardContent>
-        <Typography variant="body1">
-          Please wait while we process your payment.
-        </Typography>
-      </CardContent>
+    <Card>
+      <CardHeader>
+        <CardTitle>Processing Payment...Please wait!</CardTitle>
+      </CardHeader>
     </Card>
   );
 }
