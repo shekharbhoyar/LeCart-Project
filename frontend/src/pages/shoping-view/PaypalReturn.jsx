@@ -16,44 +16,52 @@ function PaypalReturnPage() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    console.log("Redirected to PayPal Return Page");
+    console.log("Payment ID:", paymentId, "Payer ID:", payerId);
+
     if (paymentId && payerId) {
-      const orderId = JSON.parse(sessionStorage.getItem("currentOrderId"));
+      const orderId = sessionStorage.getItem("currentOrderId")
+        ? JSON.parse(sessionStorage.getItem("currentOrderId"))
+        : null;
+
+      if (!orderId) {
+        setError("Order information is missing. Payment cannot be processed.");
+        setLoading(false);
+        return;
+      }
+
+      console.log("Captured Order ID:", orderId);
 
       dispatch(capturePayment({ paymentId, payerId, orderId }))
         .then((data) => {
+          console.log("Capture Payment Response:", data);
+
           if (data?.payload?.success) {
             sessionStorage.removeItem("currentOrderId");
             navigate("/shop/payment-success");
           } else {
-            setError("Payment failed. Try again.");
+            setError("Payment failed. Please try again.");
             setLoading(false);
           }
         })
-        .catch(() => {
-          setError("An error occurred. Try again.");
+        .catch((err) => {
+          console.error("Payment capture error:", err);
+          setError("An error occurred while processing payment.");
           setLoading(false);
         });
     } else {
-      setError("Invalid PayPal response.");
+      setError("Invalid PayPal response. Missing parameters.");
       setLoading(false);
     }
   }, [paymentId, payerId, dispatch, navigate]);
 
-  if (error) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{error}</CardTitle>
-        </CardHeader>
-      </Card>
-    );
-  }
-
   return (
-    <Card>
+    <Card className="p-6 text-center">
       <CardHeader>
-        <CardTitle>
-          {loading ? "Processing Payment...Please wait!" : "Redirecting..."}
+        <CardTitle className="text-lg">
+          {loading
+            ? "Processing Payment... Please wait!"
+            : error || "Redirecting..."}
         </CardTitle>
       </CardHeader>
     </Card>
