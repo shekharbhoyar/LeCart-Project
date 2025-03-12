@@ -64,8 +64,8 @@ export const createOrder = async (req, res) => {
         brand_name: "YourShop",
         landing_page: "BILLING",
         user_action: "PAY_NOW",
-        return_url: "http://localhost:5173/shop/paypal-return",
-        cancel_url: "http://localhost:5173/shop/paypal-cancel",
+        return_url: "https://lecart-front.onrender.com/shop/paypal-return",
+        cancel_url: "https://lecart-front.onrender.com/shop/paypal-cancel",
       },
     });
 
@@ -132,13 +132,11 @@ export const capturePayment = async (req, res) => {
 
     await order.save();
 
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Payment captured successfully.",
-        order,
-      });
+    res.status(200).json({
+      success: true,
+      message: "Payment captured successfully.",
+      order,
+    });
   } catch (e) {
     console.error("Error capturing PayPal payment:", e);
     res
