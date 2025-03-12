@@ -1,11 +1,11 @@
-import paypal from "@paypal/checkout-server-sdk";
+import checkoutNodeJssdk from "@paypal/checkout-server-sdk";
 import dotenv from "dotenv";
 
 dotenv.config();
 
 // Create a PayPal HTTP client instance
-const paypalClient = new paypal.core.PayPalHttpClient(
-  new paypal.core.SandboxEnvironment(
+const paypalClient = new checkoutNodeJssdk.core.PayPalHttpClient(
+  new checkoutNodeJssdk.core.SandboxEnvironment(
     process.env.PAYPAL_CLIENT_ID,
     process.env.PAYPAL_CLIENT_SECRET
   )

@@ -65,9 +65,12 @@ function ShoppingCheckout() {
       })),
       addressInfo: {
         addressId: currentSelectedAddress?._id,
-        address: currentSelectedAddress?.address,
+        addressLine1: currentSelectedAddress?.address, // Fixes address mapping
+
         city: currentSelectedAddress?.city,
-        pincode: currentSelectedAddress?.pincode,
+        state: currentSelectedAddress?.state ?? "N/A", // Fix for missing state
+        zipCode: currentSelectedAddress?.pincode, // Fix: `pincode` -> `zipCode`
+        countryCode: currentSelectedAddress?.countryCode ?? "US",
         phone: currentSelectedAddress?.phone,
         notes: currentSelectedAddress?.notes,
       },

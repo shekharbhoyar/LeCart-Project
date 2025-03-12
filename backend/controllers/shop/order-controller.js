@@ -1,42 +1,30 @@
 import paypalClient from "../../helpers/paypal.js";
+import checkoutNodeJssdk from "@paypal/checkout-server-sdk";
 import Order from "../../models/Order.js";
-import Cart from "../../models/Cart.js";
-import Product from "../../models/Product.js";
-import paypal from "@paypal/checkout-server-sdk";
 
 export const createOrder = async (req, res) => {
   try {
-    const { userId, cartId, addressInfo, paymentMethod, orderStatus } =
-      req.body;
+    const {
+      userId,
+      cartItems,
+      addressInfo,
+      orderStatus,
+      paymentMethod,
+      paymentStatus,
+      totalAmount,
+      orderDate,
+      orderUpdateDate,
+      cartId,
+    } = req.body;
 
-    // 🔹 Fetch cart from DB to get actual items and prices
-    const cart = await Cart.findById(cartId).populate("items.productId");
-    if (!cart) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Cart not found!" });
+    if (!addressInfo?.zipCode) {
+      return res.status(400).json({
+        success: false,
+        message: "Postal code is required for shipping.",
+      });
     }
 
-    // 🔹 Prepare items and calculate total amount
-    let totalAmount = 0;
-    const cartItems = cart.items.map((item) => {
-      const product = item.productId; // Populated product document
-      const itemTotal = product.price * item.quantity;
-      totalAmount += itemTotal;
-
-      return {
-        name: product.title,
-        sku: product._id.toString(),
-        unit_amount: {
-          currency_code: "USD",
-          value: product.price.toFixed(2),
-        },
-        quantity: item.quantity.toString(),
-      };
-    });
-
-    // 🔹 Create PayPal Order
-    const request = new paypal.orders.OrdersCreateRequest();
+    const request = new checkoutNodeJssdk.orders.OrdersCreateRequest();
     request.prefer("return=representation");
     request.requestBody({
       intent: "CAPTURE",
@@ -45,150 +33,156 @@ export const createOrder = async (req, res) => {
           amount: {
             currency_code: "USD",
             value: totalAmount.toFixed(2),
+            breakdown: {
+              item_total: {
+                currency_code: "USD",
+                value: totalAmount.toFixed(2),
+              },
+            },
           },
-          items: cartItems,
+          items: cartItems.map((item) => ({
+            name: item.title,
+            sku: item.productId,
+            unit_amount: {
+              currency_code: "USD",
+              value: item.price.toFixed(2),
+            },
+            quantity: item.quantity,
+          })),
+          shipping: {
+            address: {
+              address_line_1: addressInfo.addressLine1,
+              admin_area_2: addressInfo.city,
+              admin_area_1: addressInfo.state,
+              postal_code: addressInfo.zipCode,
+              country_code: addressInfo.countryCode,
+            },
+          },
         },
       ],
+      application_context: {
+        brand_name: "YourShop",
+        landing_page: "BILLING",
+        user_action: "PAY_NOW",
+        return_url: "http://localhost:5173/shop/paypal-return",
+        cancel_url: "http://localhost:5173/shop/paypal-cancel",
+      },
     });
 
-    const paypalOrder = await paypalClient.execute(request);
+    const orderResponse = await paypalClient.execute(request);
+    const approvalURL = orderResponse.result.links.find(
+      (link) => link.rel === "approve"
+    ).href;
 
-    // 🔹 Save the order in the database
-    const newOrder = new Order({
+    const newlyCreatedOrder = new Order({
       userId,
       cartId,
       cartItems,
       addressInfo,
       orderStatus,
       paymentMethod,
-      paymentStatus: "pending", // Default status
+      paymentStatus,
       totalAmount,
-      orderDate: new Date(),
-      orderUpdateDate: new Date(),
-      paymentId: paypalOrder.result.id, // Store PayPal order ID
+      orderDate,
+      orderUpdateDate,
+      paymentId: orderResponse.result.id,
+      payerId: null,
     });
 
-    await newOrder.save();
+    await newlyCreatedOrder.save();
 
-    res.status(201).json({
-      success: true,
-      orderId: paypalOrder.result.id,
-      approvalURL: paypalOrder.result.links.find(
-        (link) => link.rel === "approve"
-      ).href,
-    });
-  } catch (error) {
-    console.error("PayPal Order Creation Error:", error);
+    res
+      .status(201)
+      .json({ success: true, approvalURL, orderId: newlyCreatedOrder._id });
+  } catch (e) {
+    console.error("Error creating PayPal order:", e);
     res
       .status(500)
-      .json({ success: false, message: "Error while creating PayPal order" });
+      .json({ success: false, message: "Error processing payment." });
   }
 };
+
 export const capturePayment = async (req, res) => {
   try {
-    const { orderId } = req.body; // Use PayPal order ID
+    const { orderId } = req.body;
 
-    // 🔹 Capture payment from PayPal
-    const request = new paypal.orders.OrdersCaptureRequest(orderId);
-    request.requestBody({});
-
-    const capture = await paypalClient.execute(request);
-
-    if (capture.result.status !== "COMPLETED") {
-      return res.status(400).json({
-        success: false,
-        message: "Payment not completed",
-      });
+    if (!orderId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Order ID is required." });
     }
 
-    // 🔹 Find the order in the DB
-    let order = await Order.findOne({ paymentId: orderId });
+    const request = new checkoutNodeJssdk.orders.OrdersCaptureRequest(orderId);
+    request.requestBody({});
+
+    const captureResponse = await paypalClient.execute(request);
+
+    const order = await Order.findOne({ paymentId: orderId });
+
     if (!order) {
       return res
         .status(404)
-        .json({ success: false, message: "Order not found!" });
+        .json({ success: false, message: "Order not found." });
     }
 
-    // 🔹 Update order details
-    order.paymentStatus = "paid";
-    order.orderStatus = "confirmed";
-    order.payerId = capture.result.payer.payer_id;
+    order.paymentStatus = "Paid";
+    order.orderStatus = "Confirmed";
+    order.payerId = captureResponse.result.payer.payer_id;
     order.orderUpdateDate = new Date();
 
-    // 🔹 Reduce stock for each product
-    for (let item of order.cartItems) {
-      let product = await Product.findById(item.sku);
-      if (product) {
-        product.totalStock -= item.quantity;
-        await product.save();
-      }
-    }
-
-    // 🔹 Delete the cart after successful checkout
-    await Cart.findByIdAndDelete(order.cartId);
     await order.save();
 
-    res.status(200).json({
-      success: true,
-      message: "Payment successful & order confirmed",
-      order: order,
-    });
-  } catch (error) {
-    console.error("PayPal Capture Error:", error);
+    res
+      .status(200)
+      .json({
+        success: true,
+        message: "Payment captured successfully.",
+        order,
+      });
+  } catch (e) {
+    console.error("Error capturing PayPal payment:", e);
     res
       .status(500)
-      .json({ success: false, message: "Error capturing payment" });
+      .json({ success: false, message: "Error capturing payment." });
   }
 };
 
 export const getAllOrdersByUser = async (req, res) => {
   try {
     const { userId } = req.params;
-
     const orders = await Order.find({ userId });
 
     if (!orders.length) {
-      return res.status(404).json({
-        success: false,
-        message: "No orders found!",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: "No orders found." });
     }
 
-    res.status(200).json({
-      success: true,
-      data: orders,
-    });
+    res.status(200).json({ success: true, data: orders });
   } catch (e) {
-    console.log(e);
-    res.status(500).json({
-      success: false,
-      message: "Some error occurred!",
-    });
+    console.error("Error fetching user orders:", e);
+    res
+      .status(500)
+      .json({ success: false, message: "Error retrieving orders." });
   }
 };
 
 export const getOrderDetails = async (req, res) => {
   try {
     const { id } = req.params;
-
     const order = await Order.findById(id);
 
     if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found!",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found." });
     }
 
-    res.status(200).json({
-      success: true,
-      data: order,
-    });
+    res.status(200).json({ success: true, data: order });
   } catch (e) {
-    console.log(e);
-    res.status(500).json({
-      success: false,
-      message: "Some error occurred!",
-    });
+    console.error("Error fetching order details:", e);
+    res
+      .status(500)
+      .json({ success: false, message: "Error retrieving order details." });
   }
 };

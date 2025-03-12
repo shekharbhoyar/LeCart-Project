@@ -9,16 +9,26 @@ const initialState = {
   orderList: [],
   orderDetails: null,
 };
-
 export const createNewOrder = createAsyncThunk(
   "/order/createNewOrder",
-  async (orderData) => {
-    const response = await axios.post(
-      `${API_URL}/api/shop/order/create`,
-      orderData
-    );
+  async (orderData, { rejectWithValue }) => {
+    try {
+      console.log("🛒 Sending Order Data:", orderData); // Debugging
 
-    return response.data;
+      const response = await axios.post(
+        `${API_URL}/api/shop/order/create`,
+        orderData,
+        { headers: { "Content-Type": "application/json" } }
+      );
+
+      console.log("✅ Order Created:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("🚨 Axios Error:", error.response?.data || error.message);
+
+      // Ensure the payload contains the actual error message
+      return rejectWithValue(error.response?.data || "Request failed");
+    }
   }
 );
 
