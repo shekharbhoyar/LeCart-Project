@@ -6,7 +6,8 @@ import { Button } from "../../components/ui/button";
 import { useState } from "react";
 import { createNewOrder } from "../../store/shop/orderSlice/index";
 import { Navigate } from "react-router-dom";
-import { useToast } from "../../components/ui/use-toast";
+import Snackbar from "@mui/material/Snackbar";
+import MuiAlert from "@mui/material/Alert";
 
 function ShoppingCheckout() {
   const { cartItems } = useSelector((state) => state.shopCart);
@@ -14,13 +15,15 @@ function ShoppingCheckout() {
   const { approvalURL } = useSelector((state) => state.shopOrder);
   const [currentSelectedAddress, setCurrentSelectedAddress] = useState(null);
   const [isPaymentStart, setIsPaymemntStart] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "info",
+  });
   const dispatch = useDispatch();
-  const { toast } = useToast();
-
-  console.log(currentSelectedAddress, "cartItems");
 
   const totalCartAmount =
-    cartItems && cartItems.items && cartItems.items.length > 0
+    cartItems?.items?.length > 0
       ? cartItems.items.reduce(
           (sum, currentItem) =>
             sum +
@@ -34,19 +37,19 @@ function ShoppingCheckout() {
 
   function handleInitiatePaypalPayment() {
     if (cartItems.length === 0) {
-      toast({
-        title: "Your cart is empty. Please add items to proceed",
-        variant: "destructive",
+      setSnackbar({
+        open: true,
+        message: "Your cart is empty. Please add items to proceed.",
+        severity: "error",
       });
-
       return;
     }
-    if (currentSelectedAddress === null) {
-      toast({
-        title: "Please select one address to proceed.",
-        variant: "destructive",
+    if (!currentSelectedAddress) {
+      setSnackbar({
+        open: true,
+        message: "Please select an address to proceed.",
+        severity: "error",
       });
-
       return;
     }
 
@@ -65,11 +68,10 @@ function ShoppingCheckout() {
       })),
       addressInfo: {
         addressId: currentSelectedAddress?._id,
-        addressLine1: currentSelectedAddress?.address, // Fixes address mapping
-
+        addressLine1: currentSelectedAddress?.address,
         city: currentSelectedAddress?.city,
-        state: currentSelectedAddress?.state ?? "N/A", // Fix for missing state
-        zipCode: currentSelectedAddress?.pincode, // Fix: `pincode` -> `zipCode`
+        state: currentSelectedAddress?.state ?? "N/A",
+        zipCode: currentSelectedAddress?.pincode,
         countryCode: currentSelectedAddress?.countryCode ?? "US",
         phone: currentSelectedAddress?.phone,
         notes: currentSelectedAddress?.notes,
@@ -85,10 +87,19 @@ function ShoppingCheckout() {
     };
 
     dispatch(createNewOrder(orderData)).then((data) => {
-      console.log(data, "chandu");
       if (data?.payload?.success) {
+        setSnackbar({
+          open: true,
+          message: "Order created successfully! Redirecting...",
+          severity: "success",
+        });
         setIsPaymemntStart(true);
       } else {
+        setSnackbar({
+          open: true,
+          message: "Failed to create the order. Please try again.",
+          severity: "error",
+        });
         setIsPaymemntStart(false);
       }
     });
@@ -109,11 +120,10 @@ function ShoppingCheckout() {
           setCurrentSelectedAddress={setCurrentSelectedAddress}
         />
         <div className="flex flex-col gap-4">
-          {cartItems && cartItems.items && cartItems.items.length > 0
-            ? cartItems.items.map((item) => (
-                <UserCartItemsContent cartItem={item} />
-              ))
-            : null}
+          {cartItems?.items?.length > 0 &&
+            cartItems.items.map((item) => (
+              <UserCartItemsContent cartItem={item} key={item.productId} />
+            ))}
           <div className="mt-8 space-y-4">
             <div className="flex justify-between">
               <span className="font-bold">Total</span>
@@ -132,6 +142,19 @@ function ShoppingCheckout() {
           </div>
         </div>
       </div>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      >
+        <MuiAlert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </MuiAlert>
+      </Snackbar>
     </div>
   );
 }

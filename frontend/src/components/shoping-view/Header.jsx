@@ -31,22 +31,26 @@ function MenuItems() {
 
   function handleNavigate(getCurrentMenuItem) {
     sessionStorage.removeItem("filters");
+
+    if (getCurrentMenuItem.id === "search") {
+      navigate("/shop/search"); // Ensure this is a valid route
+      return;
+    }
+
     const currentFilter =
-      getCurrentMenuItem.id !== "home" &&
-      getCurrentMenuItem.id !== "products" &&
-      getCurrentMenuItem.id !== "search"
-        ? {
-            category: [getCurrentMenuItem.id],
-          }
+      getCurrentMenuItem.id !== "home" && getCurrentMenuItem.id !== "products"
+        ? { category: [getCurrentMenuItem.id] }
         : null;
 
     sessionStorage.setItem("filters", JSON.stringify(currentFilter));
 
-    location.pathname.includes("listing") && currentFilter !== null
-      ? setSearchParams(
-          new URLSearchParams(`?category=${getCurrentMenuItem.id}`)
-        )
-      : navigate(getCurrentMenuItem.path);
+    if (location.pathname.includes("listing") && currentFilter !== null) {
+      setSearchParams(
+        new URLSearchParams(`?category=${getCurrentMenuItem.id}`)
+      );
+    } else {
+      navigate(getCurrentMenuItem.path);
+    }
   }
 
   return (
@@ -54,7 +58,7 @@ function MenuItems() {
       {shoppingViewHeaderMenuItems.map((menuItem) => (
         <Label
           onClick={() => handleNavigate(menuItem)}
-          className="text-2xl font-medium cursor-pointer "
+          className="text-2xl font-medium cursor-pointer"
           key={menuItem.id}
         >
           {menuItem.label}
@@ -76,10 +80,10 @@ function HeaderRightContent() {
   }
 
   useEffect(() => {
-    dispatch(fetchCartItems(user?.id));
-  }, [dispatch]);
-
-  console.log(cartItems, "Chandrashekhar");
+    if (user?.id) {
+      dispatch(fetchCartItems(user.id));
+    }
+  }, [dispatch, user?.id]);
 
   return (
     <div className="flex lg:items-center lg:flex-row flex-col gap-4">
@@ -98,11 +102,7 @@ function HeaderRightContent() {
         </Button>
         <UserCartWrapper
           setOpenCartSheet={setOpenCartSheet}
-          cartItems={
-            cartItems && cartItems.items && cartItems.items.length > 0
-              ? cartItems.items
-              : []
-          }
+          cartItems={cartItems?.items || []}
         />
       </Sheet>
 
@@ -110,7 +110,7 @@ function HeaderRightContent() {
         <DropdownMenuTrigger asChild>
           <Avatar className="bg-black">
             <AvatarFallback className="bg-black text-white font-extrabold">
-              {user?.userName[0].toUpperCase()}
+              {user?.userName?.[0]?.toUpperCase() || "U"}
             </AvatarFallback>
           </Avatar>
         </DropdownMenuTrigger>
@@ -146,7 +146,7 @@ function ShoppingHeader() {
           <SheetTrigger asChild>
             <Button variant="outline" size="icon" className="lg:hidden">
               <Menu className="h-6 w-6" />
-              <span className="sr-only ">Toggle header menu</span>
+              <span className="sr-only">Toggle header menu</span>
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-full max-w-xs text-2xl">
