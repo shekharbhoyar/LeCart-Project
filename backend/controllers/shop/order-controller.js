@@ -24,56 +24,66 @@ export const createOrder = async (req, res) => {
       });
     }
 
-    const request = new checkoutNodeJssdk.orders.OrdersCreateRequest();
-    request.prefer("return=representation");
-    request.requestBody({
-      intent: "CAPTURE",
-      purchase_units: [
-        {
-          amount: {
-            currency_code: "USD",
-            value: totalAmount.toFixed(2),
-            breakdown: {
-              item_total: {
+    // Get PayPal access token
+    const accessToken = await getAccessToken();
+
+    // Create order via PayPal API
+    const { data } = await axios.post(
+      "https://api-m.sandbox.paypal.com/v2/checkout/orders",
+      {
+        intent: "CAPTURE",
+        purchase_units: [
+          {
+            amount: {
+              currency_code: "USD",
+              value: totalAmount.toFixed(2),
+              breakdown: {
+                item_total: {
+                  currency_code: "USD",
+                  value: totalAmount.toFixed(2),
+                },
+              },
+            },
+            items: cartItems.map((item) => ({
+              name: item.title,
+              sku: item.productId,
+              unit_amount: {
                 currency_code: "USD",
-                value: totalAmount.toFixed(2),
+                value: item.price.toFixed(2),
+              },
+              quantity: item.quantity,
+            })),
+            shipping: {
+              address: {
+                address_line_1: addressInfo.addressLine1,
+                admin_area_2: addressInfo.city,
+                admin_area_1: addressInfo.state,
+                postal_code: addressInfo.zipCode,
+                country_code: addressInfo.countryCode,
               },
             },
           },
-          items: cartItems.map((item) => ({
-            name: item.title,
-            sku: item.productId,
-            unit_amount: {
-              currency_code: "USD",
-              value: item.price.toFixed(2),
-            },
-            quantity: item.quantity,
-          })),
-          shipping: {
-            address: {
-              address_line_1: addressInfo.addressLine1,
-              admin_area_2: addressInfo.city,
-              admin_area_1: addressInfo.state,
-              postal_code: addressInfo.zipCode,
-              country_code: addressInfo.countryCode,
-            },
-          },
+        ],
+        application_context: {
+          brand_name: "YourShop",
+          landing_page: "BILLING",
+          user_action: "PAY_NOW",
+          return_url: "https://lecart-front.onrender.com/shop/paypal-return",
+          cancel_url: "https://lecart-front.onrender.com/shop/paypal-cancel",
         },
-      ],
-      application_context: {
-        brand_name: "YourShop",
-        landing_page: "BILLING",
-        user_action: "PAY_NOW",
-        return_url: "https://lecart-front.onrender.com/shop/paypal-return",
-        cancel_url: "https://lecart-front.onrender.com/shop/paypal-cancel",
       },
-    });
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
-    const orderResponse = await paypalClient.execute(request);
-    const approvalURL = orderResponse.result.links.find(
-      (link) => link.rel === "approve"
-    ).href;
+    // Extract approval URL
+    const approvalURL = data.links.find((link) => link.rel === "approve").href;
 
+    // Save order to database
     const newlyCreatedOrder = new Order({
       userId,
       cartId,
@@ -85,7 +95,7 @@ export const createOrder = async (req, res) => {
       totalAmount,
       orderDate,
       orderUpdateDate,
-      paymentId: orderResponse.result.id,
+      paymentId: data.id, // PayPal order ID
       payerId: null,
     });
 
@@ -95,7 +105,10 @@ export const createOrder = async (req, res) => {
       .status(201)
       .json({ success: true, approvalURL, orderId: newlyCreatedOrder._id });
   } catch (e) {
-    console.error("Error creating PayPal order:", e);
+    console.error(
+      "Error creating PayPal order:",
+      e.response?.data || e.message
+    );
     res
       .status(500)
       .json({ success: false, message: "Error processing payment." });
@@ -112,10 +125,20 @@ export const capturePayment = async (req, res) => {
         .json({ success: false, message: "Order ID is required." });
     }
 
-    const request = new checkoutNodeJssdk.orders.OrdersCaptureRequest(orderId);
-    request.requestBody({});
+    // Get PayPal access token
+    const accessToken = await getAccessToken();
 
-    const captureResponse = await paypalClient.execute(request);
+    // Capture payment via PayPal API
+    const { data } = await axios.post(
+      `https://api-m.sandbox.paypal.com/v2/checkout/orders/${orderId}/capture`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     const order = await Order.findOne({ paymentId: orderId });
 
@@ -127,7 +150,7 @@ export const capturePayment = async (req, res) => {
 
     order.paymentStatus = "Paid";
     order.orderStatus = "Confirmed";
-    order.payerId = captureResponse.result.payer.payer_id;
+    order.payerId = data.payer.payer_id;
     order.orderUpdateDate = new Date();
 
     await order.save();
@@ -138,7 +161,10 @@ export const capturePayment = async (req, res) => {
       order,
     });
   } catch (e) {
-    console.error("Error capturing PayPal payment:", e);
+    console.error(
+      "Error capturing PayPal payment:",
+      e.response?.data || e.message
+    );
     res
       .status(500)
       .json({ success: false, message: "Error capturing payment." });
