@@ -85,6 +85,7 @@ function App() {
           <Route path="account" element={<ShoppingAccount />} />
           <Route path="paypal-return" element={<PaypalReturnPage />} />
           <Route path="payment-success" element={<PaymentSuccessPage />} />
+          <Route path="paypal-cancel" element={<ShoppingHome />} />
           <Route path="search" element={<SearchProducts />} />
         </Route>
         <Route path="*" element={<NotFound />} />
