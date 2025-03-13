@@ -36,7 +36,7 @@ function ShoppingCheckout() {
         )
       : 0;
 
-  async function handleInitiatePaypalPayment() {
+  function handleInitiatePaypalPayment() {
     if (cartItems.length === 0) {
       setSnackbar({
         open: true,
@@ -87,50 +87,23 @@ function ShoppingCheckout() {
       payerId: "",
     };
 
-    try {
-      const orderResponse = await dispatch(createNewOrder(orderData));
-
-      if (orderResponse?.payload?.success) {
+    dispatch(createNewOrder(orderData)).then((data) => {
+      if (data?.payload?.success) {
         setSnackbar({
           open: true,
-          message: "Order created successfully! Redirecting to PayPal...",
+          message: "Order created successfully! Redirecting...",
           severity: "success",
         });
-
-        // ✅ Call backend API to initiate PayPal payment
-        const paymentResponse = await fetch(
-          `${API_URL}/api/orders/createOrder`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ orderId: orderResponse.payload.order._id }),
-          }
-        );
-
-        const paymentData = await paymentResponse.json();
-
-        if (paymentData.success && paymentData.approvalURL) {
-          window.location.href = paymentData.approvalURL; // Redirect to PayPal
-        } else {
-          throw new Error(
-            paymentData.message || "Failed to initiate PayPal payment."
-          );
-        }
+        setIsPaymemntStart(true);
       } else {
         setSnackbar({
           open: true,
           message: "Failed to create the order. Please try again.",
           severity: "error",
         });
+        setIsPaymemntStart(false);
       }
-    } catch (error) {
-      console.error("Error initiating PayPal payment:", error);
-      setSnackbar({
-        open: true,
-        message: "Something went wrong. Please try again.",
-        severity: "error",
-      });
-    }
+    });
   }
 
   if (approvalURL) {
