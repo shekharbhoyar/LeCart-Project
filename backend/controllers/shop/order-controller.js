@@ -64,8 +64,8 @@ export const createOrder = async (req, res) => {
         brand_name: "YourShop",
         landing_page: "BILLING",
         user_action: "PAY_NOW",
-        return_url: "http://localhost:5173/shop/home",
-        cancel_url: "http://localhost:5173/shop/home",
+        return_url: "http://lecart-front.onrender.com/shop/home",
+        cancel_url: "http://lecart-front.onrender.com/shop/home",
       },
     });
 
