@@ -1,25 +1,28 @@
-import axios from "axios";
+import fetch from "node-fetch";
 
-const CLIENT_ID = process.env.PAYPAL_CLIENT_ID;
-const CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET;
-const PAYPAL_API = "https://api-m.sandbox.paypal.com"; // Use "https://api-m.paypal.com" for live
+const PAYPAL_API_URL = "https://api-m.sandbox.paypal.com"; // Use live URL for production
 
-export async function getAccessToken() {
-    try {
-        const response = await axios.post(
-            `${PAYPAL_API}/v1/oauth2/token`,
-            "grant_type=client_credentials",
-            {
-                headers: {
-                    "Authorization": "Basic " + Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64"),
-                    "Content-Type": "application/x-www-form-urlencoded",
-                },
-            }
-        );
+export const getPayPalAccessToken = async () => {
+  try {
+    const auth = Buffer.from(
+      `${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_CLIENT_SECRET}`
+    ).toString("base64");
 
-        return response.data.access_token;
-    } catch (error) {
-        console.error("Failed to fetch PayPal access token:", error.response?.data || error.message);
-        throw new Error("Failed to fetch PayPal access token");
-    }
-}
+    const response = await fetch(`${PAYPAL_API_URL}/v1/oauth2/token`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Basic ${auth}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: "grant_type=client_credentials",
+    });
+
+    const data = await response.json();
+    if (!data.access_token) throw new Error("Failed to retrieve PayPal access token.");
+
+    return data.access_token;
+  } catch (error) {
+    console.error("Error fetching PayPal token:", error);
+    throw error;
+  }
+};
