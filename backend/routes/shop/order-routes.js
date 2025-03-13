@@ -1,5 +1,10 @@
 import express from "express";
-import { createOrder, getAllOrdersByUser, getOrderDetails, capturePayment } from "../../controllers/shop/order-controller.js";
+import {
+  createOrder,
+  getAllOrdersByUser,
+  getOrderDetails,
+  capturePayment,
+} from "../../controllers/shop/order-controller.js";
 
 const router = express.Router();
 
@@ -9,4 +14,3 @@ router.get("/list/:userId", getAllOrdersByUser);
 router.get("/details/:id", getOrderDetails);
 
 export default router;
-
