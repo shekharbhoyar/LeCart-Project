@@ -1,36 +1,38 @@
-import { Card, CardHeader, CardTitle } from "../../components/ui/card";
-import { capturePayment } from "../../store/shop/orderSlice/index";
 import { useEffect } from "react";
-import { useDispatch } from "react-redux";
-import { useLocation } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
+import axios from "axios";
 
-function PaypalReturnPage() {
-  const dispatch = useDispatch();
-  const location = useLocation();
-  const params = new URLSearchParams(location.search);
-  const paymentId = params.get("paymentId");
-  const payerId = params.get("PayerID");
+const PayPalReturn = () => {
+  const [searchParams] = useSearchParams();
+  const orderId = searchParams.get("token");
 
   useEffect(() => {
-    if (paymentId && payerId) {
-      const orderId = JSON.parse(sessionStorage.getItem("currentOrderId"));
-
-      dispatch(capturePayment({ paymentId, payerId, orderId })).then((data) => {
-        if (data?.payload?.success) {
-          sessionStorage.removeItem("currentOrderId");
-          window.location.href = "/shop/payment-success";
-        }
-      });
+    if (orderId) {
+      capturePayment(orderId);
     }
-  }, [paymentId, payerId, dispatch]);
+  }, [orderId]);
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Processing Payment...Please wait!</CardTitle>
-      </CardHeader>
-    </Card>
-  );
-}
+  const capturePayment = async (orderId) => {
+    try {
+      const response = await axios.post(
+        "https://your-backend.com/api/orders/capturePayment",
+        {
+          orderId,
+        }
+      );
 
-export default PaypalReturnPage;
+      if (response.data.success) {
+        console.log("Payment captured successfully:", response.data);
+        window.location.href = "/order-success"; // Redirect to order success page
+      } else {
+        console.error("Payment capture failed:", response.data.message);
+      }
+    } catch (error) {
+      console.error("Error capturing payment:", error);
+    }
+  };
+
+  return <div>Processing Payment...</div>;
+};
+
+export default PayPalReturn;
