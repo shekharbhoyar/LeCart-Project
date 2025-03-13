@@ -1,38 +1,32 @@
 import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import axios from "axios";
+import { useDispatch, useSelector } from "react-redux";
+import { capturePayment } from "../../store/shop/orderSlice";
 
 const PayPalReturn = () => {
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get("token");
 
+  const dispatch = useDispatch();
+  const { loading, success, error } = useSelector((state) => state.order);
+
   useEffect(() => {
     if (orderId) {
-      capturePayment(orderId);
-    }
-  }, [orderId]);
-
-  const capturePayment = async (orderId) => {
-    try {
-      const response = await axios.post(
-        "https://your-backend.com/api/orders/capturePayment",
-        {
-          orderId,
+      dispatch(capturePayment({ orderId })).then((data) => {
+        if (data.payload?.success) {
+          window.location.href = "/order-success"; // Redirect to success page
         }
-      );
-
-      if (response.data.success) {
-        console.log("Payment captured successfully:", response.data);
-        window.location.href = "/order-success"; // Redirect to order success page
-      } else {
-        console.error("Payment capture failed:", response.data.message);
-      }
-    } catch (error) {
-      console.error("Error capturing payment:", error);
+      });
     }
-  };
+  }, [orderId, dispatch]);
 
-  return <div>Processing Payment...</div>;
+  return (
+    <div>
+      {loading ? <p>Processing Payment...</p> : null}
+      {error ? <p style={{ color: "red" }}>Payment failed: {error}</p> : null}
+    </div>
+  );
 };
 
 export default PayPalReturn;
+
