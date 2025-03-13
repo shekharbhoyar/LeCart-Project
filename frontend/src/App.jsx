@@ -88,7 +88,7 @@ function App() {
 
           <Route path="search" element={<SearchProducts />} />
         </Route>
-        <Route path="/shop/paypal-cancel" element={<ShoppingHome />} />
+        <Route path="shop/paypal-cancel" element={<ShoppingHome />} />
         <Route path="*" element={<NotFound />} />
         <Route path="unauth-page" element={<UnauthPage />} />
       </Routes>
