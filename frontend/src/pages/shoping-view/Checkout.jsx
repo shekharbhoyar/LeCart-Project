@@ -8,7 +8,6 @@ import { createNewOrder } from "../../store/shop/orderSlice/index";
 import { Navigate } from "react-router-dom";
 import Snackbar from "@mui/material/Snackbar";
 import MuiAlert from "@mui/material/Alert";
-import { API_URL } from "@/mainConfig";
 
 function ShoppingCheckout() {
   const { cartItems } = useSelector((state) => state.shopCart);

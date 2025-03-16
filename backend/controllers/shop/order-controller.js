@@ -70,6 +70,8 @@ export const createOrder = async (req, res) => {
         user_action: "PAY_NOW",
         return_url: "https://lecart-front.onrender.com/shop/paypal-return",
         cancel_url: "https://lecart-front.onrender.com/shop/paypal-cancel",
+        // return_url: "http://localhost:5173/shop/paypal-return",
+        // cancel_url: "http://localhost:5173/shop/paypal-cancel",
       },
     });
 

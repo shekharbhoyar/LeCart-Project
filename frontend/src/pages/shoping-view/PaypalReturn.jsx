@@ -1,32 +1,36 @@
+import { Card, CardHeader, CardTitle } from "../../components/ui/card";
+import { capturePayment } from "../../store/shop/orderSlice/index";
 import { useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
-import { capturePayment } from "../../store/shop/orderSlice";
+import { useDispatch } from "react-redux";
+import { useLocation } from "react-router-dom";
 
-const PayPalReturn = () => {
-  const [searchParams] = useSearchParams();
-  const orderId = searchParams.get("token");
-
+function PaypalReturnPage() {
   const dispatch = useDispatch();
-  const { loading, success, error } = useSelector((state) => state.order);
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const paymentId = params.get("paymentId");
+  const payerId = params.get("PayerID");
 
   useEffect(() => {
-    if (orderId) {
-      dispatch(capturePayment({ orderId })).then((data) => {
-        if (data.payload?.success) {
-          window.location.href = "/order-success"; // Redirect to success page
+    if (paymentId && payerId) {
+      const orderId = JSON.parse(sessionStorage.getItem("currentOrderId"));
+
+      dispatch(capturePayment({ paymentId, payerId, orderId })).then((data) => {
+        if (data?.payload?.success) {
+          sessionStorage.removeItem("currentOrderId");
+          window.location.href = "/shop/payment-success";
         }
       });
     }
-  }, [orderId, dispatch]);
+  }, [paymentId, payerId, dispatch]);
 
   return (
-    <div>
-      {loading ? <p>Processing Payment...</p> : null}
-      {error ? <p style={{ color: "red" }}>Payment failed: {error}</p> : null}
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Processing Payment...Please wait!</CardTitle>
+      </CardHeader>
+    </Card>
   );
-};
+}
 
-export default PayPalReturn;
-
+export default PaypalReturnPage;
