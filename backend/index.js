@@ -29,10 +29,7 @@ const PORT = process.env.PORT || 5000;
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173", // Local frontend (Vite default port)
-      "https://lecart-front.onrender.com", // Deployed frontend
-    ],
+    origin: "*",
     methods: ["GET", "POST", "DELETE", "PUT"],
     allowedHeaders: [
       "Content-Type",
